@@ -1547,6 +1547,7 @@ namespace Microsoft.OpenApi
         public void AddDocumentId(string? key, System.Uri? value) { }
         public int ComponentsCount() { }
         public bool Contains(string location) { }
+        public bool DeregisterComponent<T>(string location) { }
         public System.Uri? GetDocumentId(string? key) { }
         public bool RegisterComponentForDocument<T>(Microsoft.OpenApi.OpenApiDocument openApiDocument, T componentToRegister, string id) { }
         public void RegisterComponents(Microsoft.OpenApi.OpenApiDocument document) { }

@@ -132,6 +132,33 @@ namespace Microsoft.OpenApi
 
             CopyReferences(subset);
 
+            var usedReferencesCollector = new SchemaReferencesCollectorVisitor();
+            var walker = new OpenApiWalker(usedReferencesCollector,
+                [
+                    doc => doc.Paths,
+                    doc => doc.Webhooks!,
+                    // we don't want component or components schemas in here otherwise we would end up
+                    // removing nothing. But we do want anything that can ultimately reference a schema.
+                    doc => doc.Components!.Callbacks!,
+                    doc => doc.Components!.Headers!,
+                    doc => doc.Components!.Parameters!,
+                    doc => doc.Components!.PathItems!,
+                    doc => doc.Components!.RequestBodies!,
+                    doc => doc.Components!.Responses!,
+
+                ]);
+            walker.Walk(subset);
+            var usedReferences = usedReferencesCollector.GetVisitedSchemasReferences();
+            var schemasToPrune = subset.Components?.Schemas?
+                                        .Where(schema => !usedReferences.Contains(schema.Key))
+                                        .Select(static schema => schema.Key)
+                                        .ToArray() ?? [];
+            foreach (var schemaKey in schemasToPrune)
+            {
+                subset.Components?.Schemas?.Remove(schemaKey);
+                subset.Workspace?.DeregisterComponent<OpenApiSchema>(schemaKey);
+            }
+
             return subset;
         }
 

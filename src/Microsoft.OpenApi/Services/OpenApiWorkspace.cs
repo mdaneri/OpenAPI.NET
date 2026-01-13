@@ -302,6 +302,24 @@ namespace Microsoft.OpenApi
         }
 
         /// <summary>
+        /// Deregisters a component given its location.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="location"></param>
+        /// <returns>The resolved reference.</returns>
+        public bool DeregisterComponent<T>(string location)
+        {
+            if (string.IsNullOrEmpty(location)) return default;
+
+            var uri = ToLocationUrl(location);
+            if (uri is not null)
+            {
+                return _IOpenApiReferenceableRegistry.Remove(uri) || _artifactsRegistry.Remove(uri);
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Resolves a reference given a key.
         /// </summary>
         /// <typeparam name="T"></typeparam>
