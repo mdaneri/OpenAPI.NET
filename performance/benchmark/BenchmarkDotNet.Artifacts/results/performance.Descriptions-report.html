@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>performance.Descriptions-20251023-154034</title>
+<title>performance.Descriptions-20260113-133101</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -13,23 +13,23 @@
 </head>
 <body>
 <pre><code>
-BenchmarkDotNet v0.15.4, Windows 11 (10.0.26200.6899)
+BenchmarkDotNet v0.15.6, Windows 11 (10.0.26200.7392)
 11th Gen Intel Core i7-1185G7 3.00GHz, 1 CPU, 8 logical and 4 physical cores
-.NET SDK 8.0.415
-  [Host]   : .NET 8.0.21 (8.0.21, 8.0.2125.47513), X64 RyuJIT x86-64-v4
-  ShortRun : .NET 8.0.21 (8.0.21, 8.0.2125.47513), X64 RyuJIT x86-64-v4
+.NET SDK 8.0.416
+  [Host]   : .NET 8.0.22 (8.0.22, 8.0.2225.52707), X64 RyuJIT x86-64-v4
+  ShortRun : .NET 8.0.22 (8.0.22, 8.0.2225.52707), X64 RyuJIT x86-64-v4
 </code></pre>
 <pre><code>Job=ShortRun  IterationCount=3  LaunchCount=1  
 WarmupCount=3  
 </code></pre>
 
 <table>
-<thead><tr><th>Method</th><th>Mean  </th><th>Error  </th><th>StdDev</th><th>Gen0</th><th>Gen1</th><th>Gen2</th><th>Allocated</th>
+<thead><tr><th>Method</th><th>Mean    </th><th>Error </th><th>StdDev</th><th>Gen0</th><th>Gen1</th><th>Gen2</th><th>Allocated</th>
 </tr>
-</thead><tbody><tr><td>PetStoreYaml</td><td>407.7 &mu;s</td><td>134.55 &mu;s</td><td>7.38 &mu;s</td><td>58.5938</td><td>7.8125</td><td>-</td><td>360.8 KB</td>
-</tr><tr><td>PetStoreJson</td><td>166.3 &mu;s</td><td>23.12 &mu;s</td><td>1.27 &mu;s</td><td>36.1328</td><td>6.8359</td><td>-</td><td>222.95 KB</td>
-</tr><tr><td>GHESYaml</td><td>896,578.2 &mu;s</td><td>138,441.39 &mu;s</td><td>7,588.44 &mu;s</td><td>60000.0000</td><td>23000.0000</td><td>4000.0000</td><td>345015.7 KB</td>
-</tr><tr><td>GHESJson</td><td>432,991.2 &mu;s</td><td>243,041.11 &mu;s</td><td>13,321.90 &mu;s</td><td>33000.0000</td><td>12000.0000</td><td>2000.0000</td><td>206538.29 KB</td>
+</thead><tbody><tr><td>PetStoreYaml</td><td>605.8 &mu;s</td><td>1,596.8 &mu;s</td><td>87.52 &mu;s</td><td>58.5938</td><td>11.7188</td><td>-</td><td>369.4 KB</td>
+</tr><tr><td>PetStoreJson</td><td>231.2 &mu;s</td><td>271.1 &mu;s</td><td>14.86 &mu;s</td><td>37.1094</td><td>7.8125</td><td>-</td><td>231.55 KB</td>
+</tr><tr><td>GHESYaml</td><td>1,182,382.8 &mu;s</td><td>803,469.7 &mu;s</td><td>44,040.88 &mu;s</td><td>60000.0000</td><td>23000.0000</td><td>4000.0000</td><td>345029.91 KB</td>
+</tr><tr><td>GHESJson</td><td>515,858.5 &mu;s</td><td>365,567.9 &mu;s</td><td>20,038.01 &mu;s</td><td>33000.0000</td><td>12000.0000</td><td>2000.0000</td><td>206550.25 KB</td>
 </tr></tbody></table>
 </body>
 </html>
