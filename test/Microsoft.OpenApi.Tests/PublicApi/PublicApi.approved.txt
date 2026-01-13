@@ -1535,6 +1535,7 @@ namespace Microsoft.OpenApi
     public class OpenApiWalker
     {
         public OpenApiWalker(Microsoft.OpenApi.OpenApiVisitorBase visitor) { }
+        public OpenApiWalker(Microsoft.OpenApi.OpenApiVisitorBase visitor, System.Linq.Expressions.Expression<System.Func<Microsoft.OpenApi.OpenApiDocument, object>>[]? nodesToVisit) { }
         public void Walk(Microsoft.OpenApi.OpenApiDocument? doc) { }
     }
     public class OpenApiWorkspace

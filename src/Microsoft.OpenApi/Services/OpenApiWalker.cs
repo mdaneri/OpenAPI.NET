@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Text.Json.Nodes;
 
@@ -15,15 +16,56 @@ namespace Microsoft.OpenApi
     public class OpenApiWalker
     {
         private readonly OpenApiVisitorBase _visitor;
+        private readonly Expression<Func<OpenApiDocument, object>>[]? _nodesToVisit;
         private readonly Stack<IOpenApiSchema> _schemaLoop = new();
         private readonly Stack<IOpenApiPathItem> _pathItemLoop = new();
 
         /// <summary>
         /// Initializes the <see cref="OpenApiWalker"/> class.
         /// </summary>
-        public OpenApiWalker(OpenApiVisitorBase visitor)
+        /// <param name="visitor">The visitor to use for walking the OpenAPI document.</param>
+        /// <param name="nodesToVisit">An expression specifying which nodes to visit.</param>
+        /// <example>
+        /// <code>
+        /// var walker = new OpenApiWalker(visitor, [
+        /// {
+        ///    doc =&gt; doc.Paths,
+        ///    doc =&gt; doc.Components.Schemas
+        /// }]);
+        /// </code>
+        /// </example>
+        public OpenApiWalker(OpenApiVisitorBase visitor, Expression<Func<OpenApiDocument, object>>[]? nodesToVisit)
         {
             _visitor = visitor;
+            _nodesToVisit = nodesToVisit;
+        }
+
+        /// <summary>
+        /// Initializes the <see cref="OpenApiWalker"/> class.
+        /// </summary>
+        /// <param name="visitor">The visitor to use for walking the OpenAPI document.</param>
+        public OpenApiWalker(OpenApiVisitorBase visitor):this(visitor, null)
+        {
+            // TODO: remove this constructor in next major version and make nodesToVisit params
+        }
+        private HashSet<string>? nodesToVisitPaths;
+        private bool IsNodeSelected(Expression<Func<OpenApiDocument, object>> candidate)
+        {
+            if (_nodesToVisit is not { Length: > 0 })
+            {
+                return true;
+            }
+
+            if (nodesToVisitPaths == null || nodesToVisitPaths.Count != _nodesToVisit.Length)
+            {
+                nodesToVisitPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var node in _nodesToVisit)
+                {
+                    nodesToVisitPaths.Add(node.ToString());
+                }
+            }
+
+            return nodesToVisitPaths.Contains(candidate.ToString());
         }
 
         /// <summary>
@@ -42,39 +84,39 @@ namespace Microsoft.OpenApi
 
             _visitor.Visit(doc);
 
-            if (doc.Info is { } info)
+            if (doc.Info is { } info && IsNodeSelected(static d => d.Info))
             {
                 WalkItem(OpenApiConstants.Info, info, static (self, item) => self.Walk(item));
             }
 
-            if (doc.Servers is { } servers)
+            if (doc.Servers is { } servers && IsNodeSelected(static d => d.Servers!))
             {
                 WalkItem(OpenApiConstants.Servers, servers, static (self, item) => self.Walk(item));
             }
 
-            if (doc.Paths is { } paths)
+            if (doc.Paths is { } paths && IsNodeSelected(static d => d.Paths))
             {
                 WalkItem(OpenApiConstants.Paths, paths, static (self, item) => self.Walk(item));
             }
             
             WalkDictionary(OpenApiConstants.Webhooks, doc.Webhooks, static (self, item, isComponent) => self.Walk(item, isComponent));
 
-            if (doc.Components is { } components)
+            if (doc.Components is { } components && IsNodeSelected(static d => d.Components!))
             {
                 WalkItem(OpenApiConstants.Components, components, static (self, item) => self.Walk(item));
             }
 
-            if (doc.Security is { } security)
+            if (doc.Security is { } security && IsNodeSelected(static d => d.Security!))
             {
                 WalkItem(OpenApiConstants.Security, security, static (self, item) => self.Walk(item));
             }
 
-            if (doc.ExternalDocs is { } externalDocs)
+            if (doc.ExternalDocs is { } externalDocs && IsNodeSelected(static d => d.ExternalDocs!))
             {
                 WalkItem(OpenApiConstants.ExternalDocs, externalDocs, static (self, item) => self.Walk(item));
             }
 
-            if (doc.Tags is { } tags)
+            if (doc.Tags is { } tags && IsNodeSelected(static d => d.Tags!))
             {
                 WalkItem(OpenApiConstants.Tags, tags, static (self, item) => self.Walk(item));
             }
@@ -151,18 +193,30 @@ namespace Microsoft.OpenApi
             _visitor.Visit(components);
 
             var isComponent = true;
-            WalkDictionary(OpenApiConstants.Schemas, components.Schemas, static (self, item, isComponent) => self.Walk(item), isComponent);
-            WalkDictionary(OpenApiConstants.SecuritySchemes, components.SecuritySchemes, static (self, item, isComponent) => self.Walk(item), isComponent);
-            WalkDictionary(OpenApiConstants.Callbacks, components.Callbacks, static (self, item, isComponent) => self.Walk(item), isComponent);
-            WalkDictionary(OpenApiConstants.PathItems, components.PathItems, static (self, item, isComponent) => self.Walk(item), isComponent);
-            WalkDictionary(OpenApiConstants.Parameters, components.Parameters, static (self, item, isComponent) => self.Walk(item), isComponent);
-            WalkDictionary(OpenApiConstants.Examples, components.Examples, static (self, item, isComponent) => self.Walk(item), isComponent);
-            WalkDictionary(OpenApiConstants.Headers, components.Headers, static (self, item, isComponent) => self.Walk(item), isComponent);
-            WalkDictionary(OpenApiConstants.Links, components.Links, static (self, item, isComponent) => self.Walk(item), isComponent);
-            WalkDictionary(OpenApiConstants.RequestBodies, components.RequestBodies, static (self, item, isComponent) => self.Walk(item), isComponent);
-            WalkDictionary(OpenApiConstants.Responses, components.Responses, static (self, item, isComponent) => self.Walk(item), isComponent);
+            var isComponentsNodeSelected = IsNodeSelected(static d => d.Components!);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.Schemas!))
+                WalkDictionary(OpenApiConstants.Schemas, components.Schemas, static (self, item, isComponent) => self.Walk(item), isComponent);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.SecuritySchemes!))
+                WalkDictionary(OpenApiConstants.SecuritySchemes, components.SecuritySchemes, static (self, item, isComponent) => self.Walk(item), isComponent);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.Callbacks!))
+                WalkDictionary(OpenApiConstants.Callbacks, components.Callbacks, static (self, item, isComponent) => self.Walk(item), isComponent);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.PathItems!))
+                WalkDictionary(OpenApiConstants.PathItems, components.PathItems, static (self, item, isComponent) => self.Walk(item), isComponent);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.Parameters!))
+                WalkDictionary(OpenApiConstants.Parameters, components.Parameters, static (self, item, isComponent) => self.Walk(item), isComponent);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.Examples!))
+                WalkDictionary(OpenApiConstants.Examples, components.Examples, static (self, item, isComponent) => self.Walk(item), isComponent);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.Headers!))
+                WalkDictionary(OpenApiConstants.Headers, components.Headers, static (self, item, isComponent) => self.Walk(item), isComponent);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.Links!))
+                WalkDictionary(OpenApiConstants.Links, components.Links, static (self, item, isComponent) => self.Walk(item), isComponent);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.RequestBodies!))
+                WalkDictionary(OpenApiConstants.RequestBodies, components.RequestBodies, static (self, item, isComponent) => self.Walk(item), isComponent);
+            if (isComponentsNodeSelected || IsNodeSelected(static d => d.Components!.Responses!))
+                WalkDictionary(OpenApiConstants.Responses, components.Responses, static (self, item, isComponent) => self.Walk(item), isComponent);
 
-            Walk(components as IOpenApiExtensible);
+            if (isComponentsNodeSelected)
+                Walk(components as IOpenApiExtensible);
         }
 
         /// <summary>
