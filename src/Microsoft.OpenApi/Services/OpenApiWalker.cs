@@ -7,6 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 namespace Microsoft.OpenApi
 {
@@ -48,6 +49,17 @@ namespace Microsoft.OpenApi
         {
             // TODO: remove this constructor in next major version and make nodesToVisit params
         }
+        private static readonly Regex _normalizeExpression = new(@"\w+ => \w+\.", RegexOptions.Compiled);
+        private static string NormalizeExpressionRepresentation(Expression<Func<OpenApiDocument, object>> expression)
+        {
+            var stringRepresentation = expression.ToString();
+            var matchResult = _normalizeExpression.Match(stringRepresentation);
+            if (!matchResult.Success)
+            {
+                throw new InvalidOperationException($"Could not parse expression: {stringRepresentation}, the passed lambda expression is not in the expected format: d => d.Paths");
+            }
+            return _normalizeExpression.Replace(stringRepresentation, "d => d.");
+        }
         private HashSet<string>? nodesToVisitPaths;
         private bool IsNodeSelected(Expression<Func<OpenApiDocument, object>> candidate)
         {
@@ -61,11 +73,11 @@ namespace Microsoft.OpenApi
                 nodesToVisitPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var node in _nodesToVisit)
                 {
-                    nodesToVisitPaths.Add(node.ToString());
+                    nodesToVisitPaths.Add(NormalizeExpressionRepresentation(node));
                 }
             }
 
-            return nodesToVisitPaths.Contains(candidate.ToString());
+            return nodesToVisitPaths.Contains(NormalizeExpressionRepresentation(candidate));
         }
 
         /// <summary>
